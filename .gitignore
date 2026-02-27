@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.csv
+.DS_Store
+.pytest_cache/
