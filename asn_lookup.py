@@ -35,11 +35,6 @@ FIELDNAMES = [
     "Timestamp",
     "Tool_Version",
 ]
-RFC1918_NETWORKS = (
-    ipaddress.ip_network("10.0.0.0/8"),
-    ipaddress.ip_network("172.16.0.0/12"),
-    ipaddress.ip_network("192.168.0.0/16"),
-)
 AUTHORITY_SOURCE = "BGP / ASN (Team Cymru)"
 
 
@@ -106,7 +101,15 @@ def load_ips(path: str) -> list[str]:
 
 def is_non_public(ip: str) -> bool:
     addr = ipaddress.ip_address(ip)
-    return bool(addr.is_private or addr.is_reserved)
+    return bool(
+        addr.is_private
+        or addr.is_reserved
+        or addr.is_loopback
+        or addr.is_link_local
+        or addr.is_multicast
+        or addr.is_unspecified
+        or not addr.is_global
+    )
 
 
 def build_cymru_query(ips: list[str]) -> str:
@@ -121,7 +124,8 @@ def parse_cymru_response(response: str) -> dict[str, dict[str, str]]:
             continue
         if "|" not in line:
             continue
-        parts = [p.strip() for p in line.split("|")]
+        # Keep AS Name intact even if it contains additional "|" characters.
+        parts = [p.strip() for p in line.split("|", 6)]
         if len(parts) < 7:
             continue
         asn, ip, prefix, cc, registry, allocated, as_name = parts[:7]
